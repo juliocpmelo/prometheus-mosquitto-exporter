@@ -1,0 +1,10 @@
+pub const DEFAULT_LISTEN: &str = "localhost:9883";
+pub const DEFAULT_METRICS_PATH: &str = "/metrics";
+pub const DEFAULT_MQTT_CA_FILE: &str = "/etc/ssl/certs/ca-certificates.crt";
+pub const DEFAULT_MQTT_CLIENT_ID: &str = "mosquitto-exporter";
+pub const DEFAULT_MQTT_QOS: i32 = 0;
+pub const DEFAULT_MQTT_RETRY_INTERVAL: u64 = 300;
+pub const DEFAULT_MQTT_TIMEOUT: u64 = 15;
+pub const NAME: &str = "prometheus-mosquitto-exporter";
+pub const VERSION: &str = "0.1.0-20211221";
+pub const MOSQUITTO_STATISTICS_TOPIC: &str = "$SYS/#";
