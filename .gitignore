@@ -1,0 +1,6 @@
+tmp/
+Cargo.lock
+*.swp
+target/*
+.nfs*
+
