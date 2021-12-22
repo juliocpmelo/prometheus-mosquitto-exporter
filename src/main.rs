@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate simple_error;
+extern crate lazy_static;
 
 mod config;
 mod constants;
 mod gather;
 mod logging;
-mod metrics;
 mod mqtt;
 mod usage;
 
@@ -98,7 +98,9 @@ async fn main() {
     });
 
     // TODO: process server. metrics_path here
-    let metrics = warp::path!("metrics").and(warp::get()).map(metrics::serve);
+    let metrics = warp::path!("metrics")
+        .and(warp::get())
+        .map(gather::serve_metrics);
 
     // TODO: process server.listen here
     warp::serve(metrics).run(([127, 0, 0, 1], 6883)).await;
