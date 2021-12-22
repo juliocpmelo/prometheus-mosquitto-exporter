@@ -3,16 +3,20 @@ extern crate simple_error;
 
 mod config;
 mod constants;
+mod gather;
 mod logging;
+mod metrics;
 mod mqtt;
 mod usage;
 
 use getopts::Options;
-use log::error;
 use std::sync::mpsc;
+use std::thread;
 use std::{env, process};
+use warp::Filter;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let argv: Vec<String> = env::args().collect();
     let mut options = Options::new();
     let mut log_level = log::LevelFilter::Info;
@@ -72,11 +76,43 @@ fn main() {
         }
     };
 
+    // data channel MQTT -> data handler
     let (send, receive) = mpsc::channel::<paho_mqtt::message::Message>();
+    // signal teardown for data handler thread
+    let (td_send_svc, td_recv_svc) = mpsc::channel::<bool>();
 
-    // TODO: Start consuming thread and pass it the receive end of the channel
-    match mqtt::start_mqtt_client(&config, send) {
-        Ok(_) => {}
-        Err(e) => error!("MQTT client failed: {}", e),
-    };
+    /*
+        let svc_config = match config.service {
+            Some(v) => v,
+            None => panic!("BUG: main: config.service is undefined"),
+        };
+    */
+
+    let gather_thread_id = thread::spawn(move || {
+        gather::run(receive, td_recv_svc);
+    });
+
+    let mqtt_cfg = config.mqtt;
+    let mqtt_thread_id = thread::spawn(move || {
+        mqtt::start_mqtt_client(&mqtt_cfg, send);
+    });
+
+    // TODO: process server. metrics_path here
+    let metrics = warp::path!("metrics").and(warp::get()).map(metrics::serve);
+
+    // TODO: process server.listen here
+    warp::serve(metrics).run(([127, 0, 0, 1], 6883)).await;
+
+    // TODO: How to shutdown MQTT loop gracefully ?
+    #[allow(unused_must_use)]
+    {
+        mqtt_thread_id.join();
+    }
+
+    // Shutdown data processing thread
+    #[allow(unused_must_use)]
+    {
+        td_send_svc.send(true);
+        gather_thread_id.join();
+    }
 }
