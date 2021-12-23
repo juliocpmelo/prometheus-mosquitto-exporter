@@ -102,7 +102,8 @@ async fn main() {
         Some(v) => v,
         None => panic!("BUG: config.service.metrics_path is undefined"),
     };
-    let url_path = format!("{}", metrics_path.as_str().trim_start_matches('/'));
+    let url_path = metrics_path.as_str().trim_start_matches('/').to_string();
+    let root_html = format!("<html>\n<head><title>Mosquitto exporter</title></head>\n<body>\n<h1>Mosquitto exporter</h1>\n<p><a href=\"/{}\">Metrics</a></p>\n</body>\n</html>\n", url_path);
 
     let listen = match &svc_cfg.listen {
         Some(v) => v,
@@ -115,14 +116,20 @@ async fn main() {
             process::exit(1);
         }
     };
-    // TODO: add handler for /
-    let metrics = warp::path(url_path)
+
+    let prometheus_route = warp::path(url_path)
         .and(warp::get())
         .map(gather::serve_metrics);
 
+    let root_route = warp::path::end()
+    .and(warp::get())
+    .map(move || warp::reply::html(root_html.to_string()));
+
+    let route = root_route.or(prometheus_route);
+
     // XXX: async rust with tokio might provide a better solution enable graceful shutdown
     //      e.g. https://docs.rs/warp/latest/warp/struct.Server.html#method.bind_with_graceful_shutdown
-    warp::serve(metrics).run(socketaddr).await;
+    warp::serve(route).run(socketaddr).await;
 
     // TODO: How to shutdown MQTT loop gracefully ?
     #[allow(unused_must_use)]
