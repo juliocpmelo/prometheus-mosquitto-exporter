@@ -122,8 +122,8 @@ async fn main() {
         .map(gather::serve_metrics);
 
     let root_route = warp::path::end()
-    .and(warp::get())
-    .map(move || warp::reply::html(root_html.to_string()));
+        .and(warp::get())
+        .map(move || warp::reply::html(root_html.to_string()));
 
     let route = root_route.or(prometheus_route);
 
