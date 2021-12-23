@@ -30,9 +30,9 @@ service:
 mqtt:
   # MQTT authentication
   auth:
-  	 # MQTT user with read permissions on the $SYS/# topic
+    # MQTT user with read permissions on the $SYS/# topic
     user: 'mqtt_user'
-		# Password of the MQTT user
+    # Password of the MQTT user
     password: 'mqtt_password'
   # MQTT broker address, scheme://address valid schemes are tcp and ssl
   broker: 'tls://mqtt.name.or.addr.ess'
