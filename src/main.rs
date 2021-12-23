@@ -11,7 +11,6 @@ mod usage;
 
 use getopts::Options;
 use log::error;
-use std::net::ToSocketAddrs;
 use std::sync::mpsc;
 use std::{env, process, thread};
 use warp::Filter;
@@ -93,7 +92,6 @@ async fn main() {
         mqtt::start_mqtt_client(&mqtt_cfg, send);
     });
 
-    // Start HTTP thread
     let svc_cfg = match config.service {
         Some(v) => v,
         None => panic!("BUG: main: config.service is undefined"),
@@ -104,25 +102,17 @@ async fn main() {
         Some(v) => v.trim_start_matches('/').trim_end_matches('/'),
         None => panic!("BUG: config.service.metrics_path is undefined"),
     };
-
     let listen = match &svc_cfg.listen {
         Some(v) => v,
         None => panic!("BUG: main: config.service.listen is undefined"),
     };
-    let sockaddrs = match listen.to_socket_addrs() {
+    let socketaddr = match config::socketaddr_from_listen(listen.to_string()) {
         Ok(v) => v,
         Err(e) => {
-            error!("Can't resolve listener address: {}", e);
+            error!("{}", e);
             process::exit(1);
-        }
+        },
     };
-    let addresses: Vec<_> = sockaddrs.collect();
-    if addresses.is_empty() {
-        error!("Can't resolve listener address");
-        process::exit(1);
-    }
-    let socketaddr = addresses[0];
-
     // TODO: process server. metrics_path here
     let metrics = warp::path!("metrics")
         .and(warp::get())

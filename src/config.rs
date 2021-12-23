@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
 use std::fs;
+use std::net::ToSocketAddrs;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration {
@@ -145,4 +146,14 @@ fn validate_config(cfg: &Configuration) -> Result<(), Box<dyn Error>> {
     };
 
     Ok(())
+}
+
+pub fn socketaddr_from_listen(listen: String) -> Result<std::net::SocketAddr, Box<dyn Error>> {
+    let sockaddrs = listen.to_socket_addrs()?;
+    let addresses: Vec<_> = sockaddrs.collect();
+    if addresses.is_empty() {
+        bail!("can't resolve listener address");
+    }
+    // let socketaddr = addresses[0];
+    Ok(addresses[0])
 }
