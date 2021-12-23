@@ -98,10 +98,12 @@ async fn main() {
     };
 
     // TODO: process server. metrics_path here
-    let metrics_path = match &svc_cfg.metrics_path {
-        Some(v) => v.trim_start_matches('/').trim_end_matches('/'),
+    let metrics_path = match svc_cfg.metrics_path {
+        Some(v) => v,
         None => panic!("BUG: config.service.metrics_path is undefined"),
     };
+    let url_path = format!("{}", metrics_path.as_str().trim_start_matches('/'));
+
     let listen = match &svc_cfg.listen {
         Some(v) => v,
         None => panic!("BUG: main: config.service.listen is undefined"),
@@ -113,8 +115,8 @@ async fn main() {
             process::exit(1);
         }
     };
-    // TODO: process server. metrics_path here
-    let metrics = warp::path!("metrics")
+    // TODO: add handler for /
+    let metrics = warp::path(url_path)
         .and(warp::get())
         .map(gather::serve_metrics);
 
