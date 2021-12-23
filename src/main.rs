@@ -111,7 +111,7 @@ async fn main() {
         Err(e) => {
             error!("{}", e);
             process::exit(1);
-        },
+        }
     };
     // TODO: process server. metrics_path here
     let metrics = warp::path!("metrics")
