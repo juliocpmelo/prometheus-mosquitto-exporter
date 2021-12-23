@@ -3,6 +3,7 @@ use crate::constants;
 
 use core::time::Duration;
 use log::{error, info, warn};
+use std::process;
 use std::sync::mpsc;
 
 pub fn start_mqtt_client(cfg: &config::MQTT, sender: mpsc::Sender<paho_mqtt::message::Message>) {
@@ -128,6 +129,7 @@ pub fn start_mqtt_client(cfg: &config::MQTT, sender: mpsc::Sender<paho_mqtt::mes
                     Ok(_) => info!("Disconnecting from MQTT broker"),
                     Err(e) => warn!("Can't disconnect from MQTT broker: {}", e),
                 };
+                process::exit(1);
             }
         };
     }

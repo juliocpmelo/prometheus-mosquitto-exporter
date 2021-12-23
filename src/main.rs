@@ -78,15 +78,9 @@ async fn main() {
 
     // data channel MQTT -> data handler
     let (send, receive) = mpsc::channel::<paho_mqtt::message::Message>();
+
     // signal teardown for data handler thread
     let (td_send_svc, td_recv_svc) = mpsc::channel::<bool>();
-
-    /*
-        let svc_config = match config.service {
-            Some(v) => v,
-            None => panic!("BUG: main: config.service is undefined"),
-        };
-    */
 
     let gather_thread_id = thread::spawn(move || {
         gather::run(receive, td_recv_svc);
