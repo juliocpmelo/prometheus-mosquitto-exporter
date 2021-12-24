@@ -44,6 +44,10 @@ mqtt:
   retry_interval: 60
   # timeout for connection establishment in seconds
   timeout: 5
+  # QoS, default: 0
+  qos: 0
+  # Client ID for MQTT connection, default: mosquitto-exporter
+  client_id: 'mqtt_client_id'
 ```
 
 # Licenses

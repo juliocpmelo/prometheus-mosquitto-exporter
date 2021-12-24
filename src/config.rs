@@ -1,5 +1,6 @@
 use crate::constants;
 
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
@@ -140,11 +141,46 @@ pub fn parse_config_file(f: &str) -> Result<Configuration, Box<dyn Error>> {
 fn validate_config(cfg: &Configuration) -> Result<(), Box<dyn Error>> {
     if cfg.mqtt.broker.is_empty() {
         bail!("MQTT broker is empty");
-    };
+    }
     if !cfg.mqtt.broker.starts_with("tcp://") && !cfg.mqtt.broker.starts_with("ssl://") {
         bail!("invalid broker protocol (only tcp:// or ssl:// are supported)");
-    };
+    }
 
+    if let Some(v) = cfg.mqtt.qos {
+        if v < 0 && v > 2 {
+            bail!("invalid QoS value, only 0, 1 or 2 are valid QoS values");
+        }
+    }
+
+    if let Some(v) = &cfg.mqtt.client_id {
+        if v.is_empty() {
+            bail!("MQTT client id can't be empty");
+        }
+        if v.len() > 23 {
+            // MQTT 5 and 3.1.1 specification require the MQTT broker to accept at least 23 bytes
+            // for the client id. It's up to the broker to accept more than 23 bytes.
+            // see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901059
+            warn!("MQTT 5 and 3.1.1 specification set a (optional) limit of 23 UTF-8 chars for the client id");
+        }
+    }
+
+    if let Some(svc) = &cfg.service {
+        if let Some(v) = &svc.metrics_path {
+            if v.is_empty() {
+                bail!("path for metrics exposure can't be empty");
+            }
+        }
+        if let Some(v) = &svc.metrics_path {
+            if v == "/" {
+                bail!("/ can't be uses as metrics path");
+            }
+        }
+        if let Some(v) = &svc.listen {
+            if v.is_empty() {
+                bail!("listener address can't be empty");
+            }
+        }
+    }
     Ok(())
 }
 
@@ -154,6 +190,5 @@ pub fn socketaddr_from_listen(listen: String) -> Result<std::net::SocketAddr, Bo
     if addresses.is_empty() {
         bail!("can't resolve listener address");
     }
-    // let socketaddr = addresses[0];
     Ok(addresses[0])
 }
