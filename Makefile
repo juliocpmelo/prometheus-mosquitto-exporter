@@ -9,9 +9,6 @@ build:
 
 strip: build
 	strip --strip-all target/release/$(BINARY)
-ifneq (, $(shell which upx 2>/dev/null))
-	upx -9 target/release/$(BINARY)
-endif
 
 clean:
 	cargo clean
