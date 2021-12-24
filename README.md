@@ -2,7 +2,7 @@
 The [Mosquitto MQTT broker](https://mosquitto.org) provides a number of statistics on the special `$SYS/#` topic (see [mosquitto(8)](https://mosquitto.org/man/mosquitto-8.html)).
 
 # Build requirements
-As a Rust programm, a working stable Rust toolchain is required.
+As a Rust programm, a working stable Rust toolchain with Rust *version 1.50 or newer* is required.
 
 Additionally, `cmake`, `pkg-config` and the `libssl` development package are required by the `paho-mqtt` crate.
 
