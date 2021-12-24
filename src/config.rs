@@ -8,7 +8,7 @@ use std::net::ToSocketAddrs;
 
 #[derive(Serialize, Deserialize)]
 pub struct Configuration {
-    pub mqtt: MQTT,
+    pub mqtt: Mqtt,
     pub service: Option<Service>,
 }
 
@@ -19,7 +19,7 @@ pub struct Service {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct MQTT {
+pub struct Mqtt {
     pub auth: MQTTAuth,
     pub broker: String,
     pub ca_file: Option<String>,
@@ -54,9 +54,9 @@ impl std::fmt::Debug for Service {
     }
 }
 
-impl std::fmt::Debug for MQTT {
+impl std::fmt::Debug for Mqtt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MQTT")
+        f.debug_struct("Mqtt")
             .field("auth", &self.auth)
             .field("broker", &self.broker)
             .field("ca_file", &self.ca_file)
@@ -80,7 +80,7 @@ impl std::fmt::Debug for MQTTAuth {
 
 pub fn parse_config_file(f: &str) -> Result<Configuration, Box<dyn Error>> {
     let raw = fs::read_to_string(f)?;
-    let mut result: Configuration = match serde_yaml::from_str(&raw.as_str()) {
+    let mut result: Configuration = match serde_yaml::from_str(raw.as_str()) {
         Ok(v) => v,
         Err(e) => return Err(Box::new(e)),
     };

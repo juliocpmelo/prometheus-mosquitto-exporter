@@ -6,7 +6,7 @@ use log::{error, info, warn};
 use std::process;
 use std::sync::mpsc;
 
-pub fn start_mqtt_client(cfg: &config::MQTT, sender: mpsc::Sender<paho_mqtt::message::Message>) {
+pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::message::Message>) {
     let client_id = match &cfg.client_id {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: client_id is undefined"),
