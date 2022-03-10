@@ -1,0 +1,1 @@
+OPTIONS="-c /etc/prometheus-mosquitto-exporter/config.yaml"
