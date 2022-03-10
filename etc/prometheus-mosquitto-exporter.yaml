@@ -14,6 +14,10 @@ mqtt:
   broker: 'tls://mqtt.name.or.addr.ess'
   # CA file to use for server certificate validation, default: /etc/ssl/certs/ca-certificates.crt
   ca_file: '/etc/ssl/certs/ca-certificates.crt'
+  
+  # Client side certificate and key, that must be defined depending on the mqtt broker configuration
+  client_cert_file: ''
+  client_key_file: ''
   # Disable verification of servers SSL certificate
   insecure_ssl: false
   # maximal time in seconds for reconnect in seconds

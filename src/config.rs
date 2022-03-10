@@ -24,6 +24,8 @@ pub struct Mqtt {
     pub auth: MQTTAuth,
     pub broker: String,
     pub ca_file: Option<String>,
+    pub client_cert_file: Option<String>,
+    pub client_key_file: Option<String>,
     pub client_id: Option<String>,
     pub insecure_ssl: Option<bool>,
     pub qos: Option<i32>,
@@ -61,6 +63,8 @@ impl std::fmt::Debug for Mqtt {
             .field("auth", &self.auth)
             .field("broker", &self.broker)
             .field("ca_file", &self.ca_file)
+            .field("client_cert_file", &self.client_cert_file)
+            .field("client_key_file", &self.client_key_file)
             .field("client_id", &self.client_id)
             .field("insecure_ssl", &self.insecure_ssl)
             .field("qos", &self.qos)
