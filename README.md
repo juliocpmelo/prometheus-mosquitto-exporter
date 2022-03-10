@@ -38,7 +38,10 @@ mqtt:
   broker: 'tls://mqtt.name.or.addr.ess'
   # CA file to use for server certificate validation, default: /etc/ssl/certs/ca-certificates.crt
   ca_file: '/etc/ssl/certs/ca-certificates.crt'
-  # Disable verification of servers SSL certificate
+  # Client side certificate and key, when needed, both must be defined
+  client_cert_file: ''
+  client_key_file: ''
+  # Disable name verification of servers SSL certificate
   insecure_ssl: false
   # maximal time in seconds for reconnect in seconds
   retry_interval: 60
@@ -49,6 +52,22 @@ mqtt:
   # Client ID for MQTT connection, default: mosquitto-exporter
   client_id: 'mqtt_client_id'
 ```
+# Using as a system service
+
+This project is configured to be used as systemd/init.d daemon after running make install.
+
+To run as a service first execute `make strip` then `[sudo]* make install`. Note that the instalation
+folder can be configured by the DESTDIR variable. By using this variable the software will
+be installed in the destination folder, and the configuration of the systemd files is up to you.
+If you let the variable empty, the software will be installed in the default folders: /etc/prometheus, /usr/sbin, /lib/systemd/system.
+
+To run the service you will need to provide a valid config.yaml according the example in
+the $(DESTDIR)/etc/prometheus-mosquitto-exporter. You should edit the file and save/move as config.yaml 
+in the same folder or use a custom folder according the OPTIONS variable on the file $(DESTDIR)/etc/prometheus-mosquitto-exporter/service-env.
+
+After configuring /etc/prometheus-mosquitto-exporter/config.yaml and/or /etc/prometheus-mosquitto-exporter/service-env (usually not needed)
+you can control the service with `sudo service prometheus-mosquitto-exporter [start|restart|stop|status]+`.
+
 
 # Licenses
 ## prometheus-mosquitto-exporter
