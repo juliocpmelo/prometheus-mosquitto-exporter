@@ -16,6 +16,14 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: ca_file is undefined"),
     };
+    let client_cert_file = match &cfg.client_cert_file {
+        Some(v) => v.clone(),
+        None => panic!("BUG: mqtt::start_mqtt_client: client_cert_file is undefined"),
+    }; 
+    let client_key_file = match &cfg.client_key_file {
+        Some(v) => v.clone(),
+        None => panic!("BUG: mqtt::start_mqtt_client: client_key_file is undefined"),
+    }; 
     let check_ssl = match cfg.insecure_ssl {
         Some(v) => !v,
         None => panic!("BUG: mqtt::start_mqtt_client: insecure_ssl is undefined"),
@@ -47,6 +55,27 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
             return;
         }
     };
+    if !client_cert_file.trim().is_empty() && !client_key_file.trim().is_empty() {
+        match ssl_opts.key_store(client_cert_file) {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Can't add client's cert file: {}", e);
+                return;
+            }
+        };
+        match ssl_opts.private_key(client_key_file) {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Can't add client's cert file: {}", e);
+                return;
+            }
+        };
+    }
+    else if !client_cert_file.trim().is_empty() || !client_key_file.trim().is_empty() {
+        error!("BUG: mqtt::start_mqtt_client: when defined, both client_cert_file and client_key_file must be non empty");
+        return;
+    }
+
     ssl_opts.verify(check_ssl);
     ssl_opts.enable_server_cert_auth(check_ssl);
     let ssl_opts = ssl_opts.finalize();
