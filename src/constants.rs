@@ -6,6 +6,8 @@ pub const DEFAULT_MQTT_QOS: i32 = 0;
 pub const DEFAULT_MQTT_RETRY_INTERVAL: u64 = 300;
 pub const DEFAULT_MQTT_TIMEOUT: u64 = 15;
 
+pub const DEFAULT_TOPIC_LISTENER: &str = "prometheus-mqtt-exporter/listen";
+
 pub const NAME: &str = "prometheus-mosquitto-exporter";
 pub const VERSION: &str = "1.1.0";
 
@@ -172,3 +174,8 @@ pub const TRANSMIT_BYTES_DESC: &str =
     "The total number of bytes transmitted since the broker started";
 pub const TRANSMIT_BYTES_NAME: &str = "mosquitto_transmit_bytes_total";
 pub const TRANSMIT_BYTES_TOPIC: &str = "$SYS/broker/bytes/sent";
+
+pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME: &str = "monitored_topics_received_publishes";
+pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_DESC: &str =  "The counter of the number of publishes received on specific topics configured on {topic_listener}";
+pub const TOPIC_PUBLISHES_1MIN_DESC: &str = "The moving average of the number of publishes received on specific topics configured by communication via the cfg.config_topic";
+pub const TOPIC_PUBLISHES_1MIN_NAME: &str = "topic_1min_avg_receive_publishes";

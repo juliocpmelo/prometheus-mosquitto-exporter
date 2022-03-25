@@ -4,6 +4,9 @@ service:
   listen: 'localhost:6883'
   # URL path for metrics exposure, default: /metrics
   metrics_path: '/metrics'
+  # msgs published on this topic must be in json format with a vector of topics to monitor
+  # eg.: "[t1/sub_t1, t1/sub_t2, t3/+]", prometheus-mosquitto-exporter will create counters for those topics
+  topic_listener: 'prometheus-mqtt-exporter/listen'
 mqtt:
   # MQTT authentication
   auth:
@@ -24,4 +27,8 @@ mqtt:
   retry_interval: 60
   # timeout for connection establishment in seconds
   timeout: 5
+  
+  
+
+
 

@@ -75,23 +75,6 @@ async fn main() {
             process::exit(1);
         }
     };
-
-    // data channel MQTT -> data handler
-    let (send, receive) = mpsc::channel::<paho_mqtt::message::Message>();
-
-    // signal teardown for data handler thread
-    let (td_send_svc, td_recv_svc) = mpsc::channel::<bool>();
-
-    let gather_thread_id = thread::spawn(move || {
-        gather::run(receive, td_recv_svc);
-    });
-
-    // start MQTT thread
-    let mqtt_cfg = config.mqtt;
-    let mqtt_thread_id = thread::spawn(move || {
-        mqtt::start_mqtt_client(&mqtt_cfg, send);
-    });
-
     let svc_cfg = match config.service {
         Some(v) => v,
         None => panic!("BUG: main: config.service is undefined"),
@@ -102,13 +85,36 @@ async fn main() {
         Some(v) => v,
         None => panic!("BUG: config.service.metrics_path is undefined"),
     };
-    let url_path = metrics_path.as_str().trim_start_matches('/').to_string();
-    let root_html = format!("<html>\n<head><title>Mosquitto exporter</title></head>\n<body>\n<h1>Mosquitto exporter</h1>\n<p><a href=\"/{}\">Metrics</a></p>\n</body>\n</html>\n", url_path);
-
     let listen = match &svc_cfg.listen {
         Some(v) => v,
         None => panic!("BUG: main: config.service.listen is undefined"),
     };
+    
+
+    // data channel MQTT -> data handler
+    let (send, receive) = mpsc::channel::<paho_mqtt::message::Message>();
+
+    // signal teardown for data handler thread
+    let (td_send_svc, td_recv_svc) = mpsc::channel::<bool>();
+
+    let gather_thread_id = thread::spawn(move || {
+        //TODO: add a communication channel between gather and mqtt_thread
+        gather::run(receive, td_recv_svc, &svc_cfg.topic_listener.unwrap());
+    });
+
+    // start MQTT thread
+    let mqtt_cfg = config.mqtt;
+    let mqtt_thread_id = thread::spawn(move || {
+        mqtt::start_mqtt_client(&mqtt_cfg, &svc_cfg, send);
+    });
+
+    
+
+    
+    let url_path = metrics_path.as_str().trim_start_matches('/').to_string();
+    let root_html = format!("<html>\n<head><title>Mosquitto exporter</title></head>\n<body>\n<h1>Mosquitto exporter</h1>\n<p><a href=\"/{}\">Metrics</a></p>\n</body>\n</html>\n", url_path);
+
+    
     let socketaddr = match config::socketaddr_from_listen(listen.to_string()) {
         Ok(v) => v,
         Err(e) => {

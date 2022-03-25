@@ -17,6 +17,7 @@ pub struct Configuration {
 pub struct Service {
     pub listen: Option<String>,
     pub metrics_path: Option<String>,
+    pub topic_listener: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,6 +107,7 @@ pub fn parse_config_file(f: &str) -> Result<Configuration, Box<dyn Error>> {
         None => Some(Service {
             listen: Some(constants::DEFAULT_LISTEN.to_string()),
             metrics_path: Some(constants::DEFAULT_METRICS_PATH.to_string()),
+            topic_listener: Some(constants::DEFAULT_TOPIC_LISTENER.to_string()),
         }),
     };
 

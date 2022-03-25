@@ -5,38 +5,39 @@ use core::time::Duration;
 use log::{error, info, warn};
 use std::process;
 use std::sync::mpsc;
+use std::str;
 
-pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::message::Message>) {
-    let client_id = match &cfg.client_id {
+pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: &config::Service, sender: mpsc::Sender<paho_mqtt::message::Message>) {
+    let client_id = match &mqtt_cfg.client_id {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: client_id is undefined"),
     };
-    let broker = cfg.broker.clone();
-    let ca_file = match &cfg.ca_file {
+    let broker = mqtt_cfg.broker.clone();
+    let ca_file = match &mqtt_cfg.ca_file {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: ca_file is undefined"),
     };
-    let client_cert_file = match &cfg.client_cert_file {
+    let client_cert_file = match &mqtt_cfg.client_cert_file {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: client_cert_file is undefined"),
     }; 
-    let client_key_file = match &cfg.client_key_file {
+    let client_key_file = match &mqtt_cfg.client_key_file {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: client_key_file is undefined"),
     }; 
-    let check_ssl = match cfg.insecure_ssl {
+    let check_ssl = match mqtt_cfg.insecure_ssl {
         Some(v) => !v,
         None => panic!("BUG: mqtt::start_mqtt_client: insecure_ssl is undefined"),
     };
-    let connect_timeout = match cfg.timeout {
+    let connect_timeout = match mqtt_cfg.timeout {
         Some(v) => v,
         None => panic!("BUG: mqtt::start_mqtt_client: timeout is undefined"),
     };
-    let retry_interval = match cfg.retry_interval {
+    let retry_interval = match mqtt_cfg.retry_interval {
         Some(v) => v,
         None => panic!("BUG: mqtt::start_mqtt_client: retry_interval is undefined"),
     };
-    let qos = match cfg.qos {
+    let qos = match mqtt_cfg.qos {
         Some(v) => v,
         None => panic!("BUG: mqtt::start_mqtt_client: qos is undefined"),
     };
@@ -82,8 +83,8 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
 
     let conn_opts = paho_mqtt::ConnectOptionsBuilder::new()
         .ssl_options(ssl_opts)
-        .user_name(cfg.auth.user.clone())
-        .password(cfg.auth.password.clone())
+        .user_name(mqtt_cfg.auth.user.clone())
+        .password(mqtt_cfg.auth.password.clone())
         .connect_timeout(Duration::from_secs(connect_timeout))
         .automatic_reconnect(Duration::from_secs(1), Duration::from_secs(retry_interval))
         .finalize();
@@ -96,6 +97,8 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
         }
     };
     let messages = mqtt_client.start_consuming();
+
+    let topic_listener = service_cfg.topic_listener.as_ref().unwrap();
 
     let connection = match mqtt_client.connect(conn_opts) {
         Ok(v) => v,
@@ -111,7 +114,7 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
             info!(
                 "Subscribing to topic {} on {}",
                 constants::MOSQUITTO_STATISTICS_TOPIC,
-                cfg.broker
+                mqtt_cfg.broker
             );
             match mqtt_client.subscribe(constants::MOSQUITTO_STATISTICS_TOPIC, qos) {
                 Ok(_) => info!(
@@ -124,11 +127,40 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
                     e
                 ),
             };
+            /*solarz device monitor topic*/
+            match mqtt_client.subscribe(topic_listener.as_str(), qos) {
+                Ok(_) => info!(
+                    "Subscribed to topic {}",
+                    topic_listener
+                ),
+                Err(e) => error!(
+                    "Can't subscribe to topic {}: {}",
+                    topic_listener,
+                    e
+                ),
+            };
         };
     };
 
     // Message receiving loop
     for msg in messages.iter().flatten() {
+        
+        let topic = msg.topic();
+        if topic == topic_listener {
+            let payload = match str::from_utf8(msg.payload()) {
+                Ok(v) => v,
+                Err(e) => {
+                    warn!(
+                        "Can't convert payload from {} to a UTF-8 string: {}",
+                        topic, e
+                    );
+                    continue;
+                }
+            };
+            info!( "Received {} on device monitoring topic", payload);
+        };
+
+
         match sender.send(msg) {
             Ok(_) => {}
             Err(e) => {
@@ -150,7 +182,7 @@ pub fn start_mqtt_client(cfg: &config::Mqtt, sender: mpsc::Sender<paho_mqtt::mes
                     ),
                 };
 
-                info!("Disconnecting from MQTT broker {}", cfg.broker);
+                info!("Disconnecting from MQTT broker {}", mqtt_cfg.broker);
                 let disco_opts = paho_mqtt::DisconnectOptionsBuilder::new()
                     .timeout(Duration::from_secs(connect_timeout))
                     .finalize();
