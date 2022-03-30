@@ -178,6 +178,7 @@ pub const TRANSMIT_BYTES_TOPIC: &str = "$SYS/broker/bytes/sent";
 pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME: &str = "monitoredtopics_received_publishes_total";
 pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_DESC: &str =  "The counter of the number of publishes received on specific topics configured on {topic_listener}";
 
+#[allow(non_snake_case)] //kept here just to follow the coding style
 pub fn MONITORED_TOPIC_RECEIVED_PUBLISHES_NAME(topic: &String) -> String {
     let base_name : String = String::from("monitoredtopics_{topic}_publishes_total");
     let mut name = base_name.replace("{topic}", topic.as_str());
@@ -185,4 +186,5 @@ pub fn MONITORED_TOPIC_RECEIVED_PUBLISHES_NAME(topic: &String) -> String {
     name = name.replace("-", "_");
     return name;
 } 
+
 pub const MONITORED_TOPIC_RECEIVED_PUBLISHES_DESC: &str = "The counter of the number of publishes received on topic {topic}";
