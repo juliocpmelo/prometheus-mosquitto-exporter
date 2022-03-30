@@ -638,6 +638,10 @@ fn unregister_topic_metrics(topics: &Vec<String>, dynamic_gauges : &mut HashMap<
         REGISTRY.unregister(Box::new(dynamic_gauges[topic][0].counters[0].clone())).unwrap();
         dynamic_gauges.remove(topic);
     }
+
+    if dynamic_gauges.len() == 1 { //resets the total counter when there are no topics to listen
+        dynamic_gauges["general"][0].counters[0].reset();
+    }
     
 }
 
