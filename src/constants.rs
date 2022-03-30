@@ -175,6 +175,14 @@ pub const TRANSMIT_BYTES_DESC: &str =
 pub const TRANSMIT_BYTES_NAME: &str = "mosquitto_transmit_bytes_total";
 pub const TRANSMIT_BYTES_TOPIC: &str = "$SYS/broker/bytes/sent";
 
-pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME: &str = "monitored_topics_received_publishes";
+pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME: &str = "monitoredtopics_received_publishes_total";
 pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_DESC: &str =  "The counter of the number of publishes received on specific topics configured on {topic_listener}";
-pub const TOPIC_PUBLISHES_1MIN_DESC: &str = "The moving average of the number of publishes received on specific topics configured by communication via the cfg.config_topic";
+
+pub fn MONITORED_TOPIC_RECEIVED_PUBLISHES_NAME(topic: &String) -> String {
+    let base_name : String = String::from("monitoredtopics_{topic}_publishes_total");
+    let mut name = base_name.replace("{topic}", topic.as_str());
+    name = name.replace("/", "_");
+    name = name.replace("-", "_");
+    return name;
+} 
+pub const MONITORED_TOPIC_RECEIVED_PUBLISHES_DESC: &str = "The counter of the number of publishes received on topic {topic}";

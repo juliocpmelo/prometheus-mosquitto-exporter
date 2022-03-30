@@ -143,23 +143,68 @@ pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: config::Service, 
     };
 
     // Message receiving loop
+    let mut subscribed_topics : Vec<String> = Vec::new();
     for msg in messages.iter().flatten() {
         
         let topic = msg.topic();
         if topic == topic_listener {
-            warn!( "Received msg from topic {}", topic);
-
-            let payload = match str::from_utf8(msg.payload()) {
+            
+            let topics_json = match str::from_utf8(msg.payload()) {
                 Ok(v) => v,
                 Err(e) => {
                     warn!(
                         "Can't convert payload from {} to a UTF-8 string: {}",
                         topic, e
                     );
-                    continue;
+                    continue; //ignore this message and skip to the next one
                 }
             };
-            warn!( "Received {} on device monitoring topic", payload);
+            let topics: Vec<String> = match serde_json::from_str(topics_json) {
+                Ok(v) => v,
+                Err(e) => {
+                    warn!("Error in json parsing {} : {}", topics_json, e);
+                    continue; //ignore this message and skip to the next one
+                }
+            };
+        
+            for t in topics.iter(){
+                if subscribed_topics.contains(t) { //avoid resubscriptions
+                    continue;
+                }
+                match mqtt_client.subscribe(t, qos) {
+                    Ok(_) => {
+                        info!("Subscribed to topic {}",t);
+                        subscribed_topics.push(String::from(t));
+                    },
+                    Err(e) => error!(
+                        "Can't subscribe to topic {}: {}",
+                        t,
+                        e
+                    ),
+                };
+            }
+
+            let mut unsubscribe : Vec<String> = Vec::new();
+            for t in subscribed_topics.iter(){
+                if !topics.contains(t) {
+                    match mqtt_client.unsubscribe(t) {
+                        Ok(_) => {
+                            info!("unsubscribed from topic {}",t);
+                            unsubscribe.push(String::from(t));
+                        },
+                        Err(e) => error!(
+                            "Can't subscribe to topic {}: {}",
+                            t,
+                            e
+                        ),
+                    };
+                }
+            }
+            subscribed_topics.retain(|element| !unsubscribe.contains(element));
+            info!("Monitoring topics {:?}", subscribed_topics);
+
+            
+
         };
 
 
@@ -183,6 +228,8 @@ pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: config::Service, 
                         e
                     ),
                 };
+
+                
 
                 info!("Disconnecting from MQTT broker {}", mqtt_cfg.broker);
                 let disco_opts = paho_mqtt::DisconnectOptionsBuilder::new()
