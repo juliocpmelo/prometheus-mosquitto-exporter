@@ -7,20 +7,20 @@ use std::fmt;
 use std::fs;
 use std::net::ToSocketAddrs;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Configuration {
     pub mqtt: Mqtt,
     pub service: Option<Service>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Service {
     pub listen: Option<String>,
     pub metrics_path: Option<String>,
     pub topic_listener: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Mqtt {
     pub auth: MQTTAuth,
     pub broker: String,
@@ -34,7 +34,7 @@ pub struct Mqtt {
     pub timeout: Option<u64>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MQTTAuth {
     pub password: String,
     pub user: String,
@@ -101,6 +101,10 @@ pub fn parse_config_file(f: &str) -> Result<Configuration, Box<dyn Error>> {
             v.metrics_path = match v.metrics_path {
                 Some(v) => Some(v),
                 None => Some(constants::DEFAULT_METRICS_PATH.to_string()),
+            };
+            v.topic_listener = match v.topic_listener {
+                Some(v) => Some(v),
+                None => Some(constants::DEFAULT_TOPIC_LISTENER.to_string()),
             };
             Some(v)
         }

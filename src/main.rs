@@ -75,20 +75,7 @@ async fn main() {
             process::exit(1);
         }
     };
-    let svc_cfg = match config.service {
-        Some(v) => v,
-        None => panic!("BUG: main: config.service is undefined"),
-    };
-
-    // TODO: process server. metrics_path here
-    let metrics_path = match svc_cfg.metrics_path {
-        Some(v) => v,
-        None => panic!("BUG: config.service.metrics_path is undefined"),
-    };
-    let listen = match &svc_cfg.listen {
-        Some(v) => v,
-        None => panic!("BUG: main: config.service.listen is undefined"),
-    };
+    
     
 
     // data channel MQTT -> data handler
@@ -97,17 +84,32 @@ async fn main() {
     // signal teardown for data handler thread
     let (td_send_svc, td_recv_svc) = mpsc::channel::<bool>();
 
+    let mut cfg_copy = config.clone().service.unwrap();
     let gather_thread_id = thread::spawn(move || {
         //TODO: add a communication channel between gather and mqtt_thread
-        gather::run(receive, td_recv_svc, &svc_cfg.topic_listener.unwrap());
+        gather::run(receive, td_recv_svc, cfg_copy);
     });
 
     // start MQTT thread
+    cfg_copy = config.clone().service.unwrap();
     let mqtt_cfg = config.mqtt;
     let mqtt_thread_id = thread::spawn(move || {
-        mqtt::start_mqtt_client(&mqtt_cfg, &svc_cfg, send);
+        mqtt::start_mqtt_client(&mqtt_cfg, cfg_copy, send);
     });
 
+    let svc_cfg = match config.service {
+        Some(v) => v,
+        None => panic!("BUG: main: config.service is undefined"),
+    };
+    // TODO: process server. metrics_path here
+    let metrics_path = match svc_cfg.metrics_path {
+        Some(v) => v,
+        None => panic!("BUG: config.service.metrics_path is undefined"),
+    };
+    let listen = match svc_cfg.listen {
+        Some(v) => v,
+        None => panic!("BUG: main: config.service.listen is undefined"),
+    };
     
 
     
