@@ -7,7 +7,7 @@ use std::process;
 use std::sync::mpsc;
 use std::str;
 
-pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: &config::Service, sender: mpsc::Sender<paho_mqtt::message::Message>) {
+pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: config::Service, sender: mpsc::Sender<paho_mqtt::message::Message>) {
     let client_id = match &mqtt_cfg.client_id {
         Some(v) => v.clone(),
         None => panic!("BUG: mqtt::start_mqtt_client: client_id is undefined"),
@@ -147,6 +147,8 @@ pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: &config::Service,
         
         let topic = msg.topic();
         if topic == topic_listener {
+            warn!( "Received msg from topic {}", topic);
+
             let payload = match str::from_utf8(msg.payload()) {
                 Ok(v) => v,
                 Err(e) => {
@@ -157,7 +159,7 @@ pub fn start_mqtt_client(mqtt_cfg: &config::Mqtt, service_cfg: &config::Service,
                     continue;
                 }
             };
-            info!( "Received {} on device monitoring topic", payload);
+            warn!( "Received {} on device monitoring topic", payload);
         };
 
 

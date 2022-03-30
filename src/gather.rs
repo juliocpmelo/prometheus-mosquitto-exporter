@@ -1,13 +1,14 @@
 use crate::constants;
 
 use log::{error, info, warn};
-use std::time::{Duration, SystemTime};
 use prometheus::{Gauge, IntCounter, IntGauge, Registry};
 use std::collections::HashMap;
 use std::str;
 use std::sync::mpsc;
+use serde::{Deserialize};
 
-use serde_json::Value;
+use crate::config;
+
 
 struct TopicMonitor {
     name: String,
@@ -74,9 +75,10 @@ lazy_static::lazy_static! {
 
 
 
-pub fn run(receiver: mpsc::Receiver<paho_mqtt::message::Message>, teardown: mpsc::Receiver<bool>, topic_listener: &String) {
+pub fn run(receiver: mpsc::Receiver<paho_mqtt::message::Message>, teardown: mpsc::Receiver<bool>, service_cfg: config::Service) {
     register_metrics();
-    let dynamic_topics: HashMap<String, Vec<TopicMonitor>>;
+    let mut dynamic_topics: HashMap<String, Vec<TopicMonitor>> = HashMap::new();
+    let topic_listener = service_cfg.topic_listener.unwrap();
     loop {
         if teardown.try_recv().is_ok() {
             info!("Stopping data collector thread");
@@ -93,6 +95,9 @@ pub fn run(receiver: mpsc::Receiver<paho_mqtt::message::Message>, teardown: mpsc
         };
         let topic = msg.topic();
 
+        //println!( "Received msg from topic {}", topic);
+        
+
         let raw_data = msg.payload();
         let payload = match str::from_utf8(raw_data) {
             Ok(v) => v,
@@ -104,19 +109,18 @@ pub fn run(receiver: mpsc::Receiver<paho_mqtt::message::Message>, teardown: mpsc
                 continue;
             }
         };
-        match topic {
-            topic_listener => { //messages on this topic mean that we need to add more metrics to the output
-                register_topic_metrics(payload, dynamic_topics)
-            }
-            _ => {
-                process_data(topic, payload, dynamic_topics)
-            }
+        
+        if topic == topic_listener {
+            register_topic_metrics(payload, &mut dynamic_topics)
+        }
+        else{
+            process_data(topic, payload)
         }
         
     }
 }
 
-fn process_data(topic: &str, data: &str, dynamic_topics: HashMap<String, Vec<TopicMonitor>>) {
+fn process_data(topic: &str, data: &str) {
     /*defautl topics*/
     match topic {
         constants::MOSQUITTO_UPTIME_TOPIC => {}
@@ -606,17 +610,25 @@ fn process_data(topic: &str, data: &str, dynamic_topics: HashMap<String, Vec<Top
     };
 }
 
-fn process_solarz_device_data(topic: &str, data: &str){
-    
-}
 
 fn unregister_topic_metrics(topics: Vec<String>) {
     //UNREGISTRY(Box::new(Gauge::new(gauge_name, gauge_desc).unwrap()))
 }
 
-fn register_topic_metrics(topics_json: &str, dynamic_gauges : HashMap<String, Vec<TopicMonitor>>) {
+#[derive(Deserialize, Debug)]
+struct Topics {
+    list : Vec<String>,
+}
 
-    let v: Vec<String> = serde_json::from_str(topics_json).unwrap();
+fn register_topic_metrics(topics_json: &str, dynamic_gauges : &mut HashMap<String, Vec<TopicMonitor>>) {
+
+    let v: Vec<String> = match serde_json::from_str(topics_json) {
+        Ok(v) => v,
+        Err(e) => {
+            warn!("Error in json parsing {}", e);
+            return;
+        }
+    };
 
     for topic in v.iter(){
         println!("Got topic {}", topic);
@@ -627,11 +639,12 @@ fn register_topic_metrics(topics_json: &str, dynamic_gauges : HashMap<String, Ve
         };
         
         let counter : IntCounter = IntCounter::new(topic.to_owned() + "_1MIN", constants::TOPIC_PUBLISHES_1MIN_DESC).unwrap();
-        topic_monitor.counters.push(counter);
+        topic_monitor.counters.push(counter.clone());
     
         dynamic_gauges.insert(topic.to_string(), vec!{topic_monitor});
         REGISTRY.register(Box::new(counter.clone()))
                 .unwrap();
+        
     }
     if dynamic_gauges.len() == 0 { //add the general monitor
         let counter : IntCounter = IntCounter::new(constants::MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME, constants::MONITORED_TOPICS_RECEIVED_PUBLISHES_DESC).unwrap();
@@ -639,9 +652,9 @@ fn register_topic_metrics(topics_json: &str, dynamic_gauges : HashMap<String, Ve
             name: String::from("general"),
             counters: Vec::new(),
         };
-        topic_monitor.counters.push(counter);
+        topic_monitor.counters.push(counter.clone());
     
-        dynamic_gauges.insert(topic_monitor.name, vec!{topic_monitor});
+        dynamic_gauges.insert(topic_monitor.name.clone(), vec!{topic_monitor});
         REGISTRY.register(Box::new(counter.clone()))
                 .unwrap();
     }

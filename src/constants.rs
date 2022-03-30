@@ -178,4 +178,3 @@ pub const TRANSMIT_BYTES_TOPIC: &str = "$SYS/broker/bytes/sent";
 pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_NAME: &str = "monitored_topics_received_publishes";
 pub const MONITORED_TOPICS_RECEIVED_PUBLISHES_DESC: &str =  "The counter of the number of publishes received on specific topics configured on {topic_listener}";
 pub const TOPIC_PUBLISHES_1MIN_DESC: &str = "The moving average of the number of publishes received on specific topics configured by communication via the cfg.config_topic";
-pub const TOPIC_PUBLISHES_1MIN_NAME: &str = "topic_1min_avg_receive_publishes";
