@@ -1,6 +1,7 @@
 [Unit]
 Description=Export Mosquitto MQTT broker statistics to Prometheus
 After=network.target auditd.service sssd.service
+PartOf=mosquitto.service
 
 [Service]
 EnvironmentFile=-/etc/prometheus-mosquitto-exporter/service-env
