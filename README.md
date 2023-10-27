@@ -62,8 +62,8 @@ be installed in the destination folder, and the configuration of the systemd fil
 If you let the variable empty, the software will be installed in the default folders: /etc/prometheus, /usr/sbin, /lib/systemd/system.
 
 To run the service you will need to provide a valid config.yaml according the example in
-the $(DESTDIR)/etc/prometheus-mosquitto-exporter. You should edit the file and save/move as config.yaml 
-in the same folder or use a custom folder according the OPTIONS variable on the file $(DESTDIR)/etc/prometheus-mosquitto-exporter/service-env.
+the `$(DESTDIR)/etc/prometheus-mosquitto-exporter`. You should edit the file and save/move as config.yaml 
+in the same folder or use a custom folder according the OPTIONS variable on the file `$(DESTDIR)/etc/prometheus-mosquitto-exporter/service-env`.
 
 After configuring /etc/prometheus-mosquitto-exporter/config.yaml and/or /etc/prometheus-mosquitto-exporter/service-env (usually not needed)
 you can control the service with `sudo service prometheus-mosquitto-exporter [start|restart|stop|status]+`.
